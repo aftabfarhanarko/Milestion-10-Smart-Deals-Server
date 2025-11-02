@@ -153,6 +153,7 @@ async function run() {
       console.log(email);
     });
 
+  //  Bids Email Match to return
     app.get("/bids", async (req, res) => {
       const query = {};
       if (query.email) {
@@ -165,6 +166,8 @@ async function run() {
       res.send(result);
       console.log(result);
     });
+
+
 
     app.post("/bids", async (req, res) => {
       const data = req.body;
