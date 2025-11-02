@@ -3,8 +3,7 @@ const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const cors = require("cors");
 const app = express();
 const port = process.env.PORT || 3000;
-require('dotenv').config()
-
+require("dotenv").config();
 
 // set midelwear
 app.use(cors());
@@ -12,8 +11,7 @@ app.use(express.json());
 
 // const uri =
 //   "mongodb+srv://SmartDealsUser:nbOJwLkt8IV5LCGW@clustermyfirstmongodbpr.2cecfoe.mongodb.net/?appName=ClusterMyFirstMongoDbProject";
-const uri =
-  `mongodb+srv://${process.env.DB_USERNAME}:${process.env.DB_PASSWORD}@clustermyfirstmongodbpr.2cecfoe.mongodb.net/?appName=ClusterMyFirstMongoDbProject`;
+const uri = `mongodb+srv://${process.env.DB_USERNAME}:${process.env.DB_PASSWORD}@clustermyfirstmongodbpr.2cecfoe.mongodb.net/?appName=ClusterMyFirstMongoDbProject`;
 
 const client = new MongoClient(uri, {
   serverApi: {
@@ -147,7 +145,7 @@ async function run() {
       const email = req.query.email;
       const query = {};
       if (email) {
-        query.buyer_email = email;
+        query.byer_name = email;
       }
       const data = myBids.find(query);
       const result = await data.toArray();
@@ -155,18 +153,18 @@ async function run() {
       console.log(email);
     });
 
-   app.get("/bids", async (req, res) => {
-  const byer_email = req.query.byer_email; // <-- same name
-  const query = {};
+    app.get("/bids", async (req, res) => {
+      const query = {};
+      if (query.email) {
+        query.byer_email = email;
+      }
 
-  if (byer_email) {
-    query.byer_email = byer_email; // <-- match field name in DB
-  }
+      const coursor = myBids.find(query);
+      const result = await coursor.toArray();
 
-  const result = await myBids.find(query).toArray();
-  res.send(result);
-});
-
+      res.send(result);
+      console.log(result);
+    });
 
     app.post("/bids", async (req, res) => {
       const data = req.body;
