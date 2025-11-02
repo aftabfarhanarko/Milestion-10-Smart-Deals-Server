@@ -140,24 +140,24 @@ async function run() {
       res.send(result);
     });
 
-    // bids relatieat API
-    app.get("/bids", async (req, res) => {
-      const email = req.query.email;
-      const query = {};
-      if (email) {
-        query.byer_name = email;
-      }
-      const data = myBids.find(query);
-      const result = await data.toArray();
-      res.send(result);
-      console.log(email);
-    });
+    // // bids relatieat API
+    // app.get("/bids", async (req, res) => {
+    //   const email = req.query.email;
+    //   const query = {};
+    //   if (email) {
+    //     query.byer_name = email;
+    //   }
+    //   const data = myBids.find(query);
+    //   const result = await data.toArray();
+    //   res.send(result);
+    //   console.log(email);
+    // });
 
   //  Bids Email Match to return
     app.get("/bids", async (req, res) => {
       const query = {};
-      if (query.email) {
-        query.byer_email = email;
+      if (req.query.email) {
+        query.byer_email = req.query.email;
       }
 
       const coursor = myBids.find(query);
