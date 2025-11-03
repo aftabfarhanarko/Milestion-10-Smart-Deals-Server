@@ -1,6 +1,6 @@
 const express = require("express");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
-const jwt = require('jsonwebtoken');
+const jwt = require("jsonwebtoken");
 
 const admin = require("firebase-admin");
 const cors = require("cors");
@@ -23,7 +23,6 @@ const logger = (req, res, next) => {
   next();
 };
 
-
 const verifyFirebaseToken = async (req, res, next) => {
   if (!req.headers.author) {
     return res.status(401).send({ message: "Unauthorized access" });
@@ -39,6 +38,26 @@ const verifyFirebaseToken = async (req, res, next) => {
   } catch {
     return res.status(401).send({ message: "Unauthorized access" });
   }
+};
+
+
+
+const chackTokens = async (req, res, next) => {
+  if (!req.headers.author) {
+    return res.status(401).send({ message: "unother access" });
+  }
+  const tokens = req.headers.author.split(" ")[1];
+  if (!tokens) {
+    return res.status(401).send({ message: "unother access" });
+  }
+  jwt.verify(tokens, process.env.JWT_SECTIGHT, (err, decoded) => {
+    if (err) {
+      return res.status(401).send({ message: "unouthroize users" });
+    }
+    console.log(decoded);
+    req.oner_email = decoded.email
+    next();
+  });
 };
 
 // const userEmailverify = async (req, res, next) => {
@@ -69,14 +88,14 @@ async function run() {
     const myBids = myDb.collection("bids");
     const myUser = myDb.collection("user");
 
-
     // creat coustom JWT Tokens
-    app.post("/jseonToken", (req,res) =>{
+    app.post("/jseonToken", (req, res) => {
       const myUser = req.body;
-      const token = jwt.sign(myUser, process.env.JWT_SECTIGHT,{expiresIn:"1h"});
-      res.send({token});
-    })
-
+      const token = jwt.sign(myUser, process.env.JWT_SECTIGHT, {
+        expiresIn: "1h",
+      });
+      res.send({ token });
+    });
 
     // userApi
     app.get("/user", async (req, res) => {
@@ -187,20 +206,35 @@ async function run() {
 
     // bids relatieat API
     //  Bids Email Match to return
-    app.get("/bids", logger, verifyFirebaseToken, async (req, res) => {
+    // app.get("/bids", logger, verifyFirebaseToken, async (req, res) => {
+    //   const query = {};
+    //   if (req.query.email) {
+
+    //     // login user email chack
+    //     if (req.query.email !== req.oner_email) {
+    //       return res.status(403).send({ message: "firebase access denides" });
+    //     }
+
+    //     query.byer_email = req.query.email;
+    //   }
+    //   const coursor = myBids.find(query).sort({ bid_price: 1 });
+    //   const result = await coursor.toArray();
+
+    //   res.send(result);
+    // });
+
+    app.get("/bids", chackTokens, async (req, res) => {
       const query = {};
       if (req.query.email) {
-
-        // login user email chack
-        if (req.query.email !== req.oner_email) {
-          return res.status(403).send({ message: "firebase access denides" });
-        }
-
+          
         query.byer_email = req.query.email;
       }
-      const coursor = myBids.find(query).sort({ bid_price: 1 });
-      const result = await coursor.toArray();
 
+      if(req.query.email !== req.oner_email){
+        return res.status(403).send({message: "unoutrize access user"})
+      }
+      const coursor = myBids.find(query);
+      const result = await coursor.toArray();
       res.send(result);
     });
 
