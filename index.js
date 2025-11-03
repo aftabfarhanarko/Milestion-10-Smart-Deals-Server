@@ -1,5 +1,7 @@
 const express = require("express");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
+const jwt = require('jsonwebtoken');
+
 const admin = require("firebase-admin");
 const cors = require("cors");
 const app = express();
@@ -30,7 +32,6 @@ const verifyFirebaseToken = async (req, res, next) => {
   if (!token) {
     return res.status(401).send({ message: "Unauthorized access" });
   }
-
   try {
     const onerInformation = await admin.auth().verifyIdToken(token);
     req.oner_email = onerInformation.email;
@@ -68,11 +69,21 @@ async function run() {
     const myBids = myDb.collection("bids");
     const myUser = myDb.collection("user");
 
+
+    // creat coustom JWT Tokens
+    app.post("/jseonToken", (req,res) =>{
+      const myUser = req.body;
+      const token = jwt.sign(myUser, process.env.JWT_SECTIGHT,{expiresIn:"1h"});
+      res.send({token});
+    })
+
+
     // userApi
     app.get("/user", async (req, res) => {
       const data = myUser.find();
       const result = await data.toArray();
       res.send(result);
+      console.log(result);
     });
 
     app.post("/user", async (req, res) => {
@@ -179,6 +190,7 @@ async function run() {
     app.get("/bids", logger, verifyFirebaseToken, async (req, res) => {
       const query = {};
       if (req.query.email) {
+
         // login user email chack
         if (req.query.email !== req.oner_email) {
           return res.status(403).send({ message: "firebase access denides" });
