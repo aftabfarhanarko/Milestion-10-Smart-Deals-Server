@@ -1,32 +1,51 @@
 const express = require("express");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
+const admin = require("firebase-admin");
 const cors = require("cors");
 const app = express();
 const port = process.env.PORT || 3000;
 require("dotenv").config();
 
+// firebase admine SDk
+const serviceAccount = require("./firebase-admin-sdk.json");
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
+});
+
 // set midelwear
 app.use(cors());
 app.use(express.json());
 
-const logger = (req,res,next) => {
+const logger = (req, res, next) => {
   console.log("This is Midelwier of Accesstoken");
-  next()
-}
+  next();
+};
 
-const verifyFirebaseToken = (req,res, next) => {
-  console.log('This is firebase token', req.headers.author);
-  if(!req.headers.author){
-    res.status(401).send({message: "Unauthorized access"})
+
+const verifyFirebaseToken = async (req, res, next) => {
+  if (!req.headers.author) {
+    return res.status(401).send({ message: "Unauthorized access" });
+  }
+  const token = req.headers.author.split(" ")[1];
+  if (!token) {
+    return res.status(401).send({ message: "Unauthorized access" });
   }
 
-  const token = req.headers.author.split(' ')[1];
-  if(!token){
-    res.status(401).send({message: "Unauthorized access"})
+  try {
+    const onerInformation = await admin.auth().verifyIdToken(token);
+    req.oner_email = onerInformation.email;
+    next();
+  } catch {
+    return res.status(401).send({ message: "Unauthorized access" });
   }
-  next()
-}
+};
 
+// const userEmailverify = async (req, res, next) => {
+//   if (req.oner_email !== req.oner_email) {
+//     return res.status(403).send({ message: "firebase access denides" });
+//   }
+//   next()
+// };
 const uri = `mongodb+srv://${process.env.DB_USERNAME}:${process.env.DB_PASSWORD}@clustermyfirstmongodbpr.2cecfoe.mongodb.net/?appName=ClusterMyFirstMongoDbProject`;
 
 const client = new MongoClient(uri, {
@@ -119,7 +138,7 @@ async function run() {
       res.send(result);
     });
 
-    app.get("/producat/bids/:id", async (req, res) => {
+    app.get("/producat/bids/:id", verifyFirebaseToken, async (req, res) => {
       const producatId = req.params.id;
       const coursor = { producatIDS: producatId };
       const query = myBids.find(coursor).sort({ bid_price: -1 });
@@ -155,13 +174,16 @@ async function run() {
       res.send(result);
     });
 
-    // // bids relatieat API
-
+    // bids relatieat API
     //  Bids Email Match to return
-    app.get("/bids", logger,verifyFirebaseToken,async (req, res) => {
-      // console.log("Access Tokens ", req.headers)
+    app.get("/bids", logger, verifyFirebaseToken, async (req, res) => {
       const query = {};
       if (req.query.email) {
+        // login user email chack
+        if (req.query.email !== req.oner_email) {
+          return res.status(403).send({ message: "firebase access denides" });
+        }
+
         query.byer_email = req.query.email;
       }
       const coursor = myBids.find(query).sort({ bid_price: 1 });
