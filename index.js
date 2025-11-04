@@ -7,6 +7,7 @@ const cors = require("cors");
 const app = express();
 const port = process.env.PORT || 3000;
 require("dotenv").config();
+const cookieParser = require('cookie-parser')
 
 // firebase admine SDk
 const serviceAccount = require("./firebase-admin-sdk.json");
@@ -17,6 +18,8 @@ admin.initializeApp({
 // set midelwear
 app.use(cors());
 app.use(express.json());
+// app.use(cookieParser());
+
 
 const logger = (req, res, next) => {
   console.log("This is Midelwier of Accesstoken");
@@ -60,12 +63,15 @@ const chackTokens = async (req, res, next) => {
   });
 };
 
+
 // const userEmailverify = async (req, res, next) => {
 //   if (req.oner_email !== req.oner_email) {
 //     return res.status(403).send({ message: "firebase access denides" });
 //   }
 //   next()
 // };
+
+
 const uri = `mongodb+srv://${process.env.DB_USERNAME}:${process.env.DB_PASSWORD}@clustermyfirstmongodbpr.2cecfoe.mongodb.net/?appName=ClusterMyFirstMongoDbProject`;
 
 const client = new MongoClient(uri, {
@@ -149,14 +155,11 @@ async function run() {
     app.get("/producat", async (req, res) => {
       //   const projectFild = { title: 1, price_min: 1, price_max: 1, image: 1 };
       //   const data = myCollection.find().sort({ price_min: -1 }).skip(2).limit(6).project(projectFild);
-
-      const email = req.query.email;
-      const point = {};
-
-      if (email) {
-        point.email = email;
+     const query = {};
+      if (req.query.email) {
+        query.email = req.query.email;
       }
-      const data = myCollection.find(point);
+      const data = myCollection.find(query);
       const result = await data.toArray();
       res.send(result);
     });
@@ -237,6 +240,7 @@ async function run() {
       const result = await coursor.toArray();
       res.send(result);
     });
+
 
     app.post("/bids", async (req, res) => {
       const data = req.body;
