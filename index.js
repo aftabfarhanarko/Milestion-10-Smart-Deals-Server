@@ -1,13 +1,12 @@
 const express = require("express");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const jwt = require("jsonwebtoken");
-
 const admin = require("firebase-admin");
 const cors = require("cors");
 const app = express();
 const port = process.env.PORT || 3000;
 require("dotenv").config();
-const cookieParser = require('cookie-parser')
+const cookieParser = require("cookie-parser");
 
 // firebase admine SDk
 const serviceAccount = require("./firebase-admin-sdk.json");
@@ -16,10 +15,14 @@ admin.initializeApp({
 });
 
 // set midelwear
-app.use(cors());
+app.use(
+  cors({
+    origin: "http://localhost:5173",
+    credentials: true,
+  })
+);
 app.use(express.json());
 // app.use(cookieParser());
-
 
 const logger = (req, res, next) => {
   console.log("This is Midelwier of Accesstoken");
@@ -27,23 +30,25 @@ const logger = (req, res, next) => {
 };
 
 const verifyFirebaseToken = async (req, res, next) => {
-  if (!req.headers.author) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader) {
     return res.status(401).send({ message: "Unauthorized access" });
   }
-  const token = req.headers.author.split(" ")[1];
+
+  const token = authHeader.split(" ")[1];
   if (!token) {
     return res.status(401).send({ message: "Unauthorized access" });
   }
+
   try {
-    const onerInformation = await admin.auth().verifyIdToken(token);
-    req.oner_email = onerInformation.email;
+    const decodedUser = await admin.auth().verifyIdToken(token);
+    req.oner_email = decodedUser.email;
     next();
-  } catch {
+  } catch (error) {
+    console.error("Token verification error:", error);
     return res.status(401).send({ message: "Unauthorized access" });
   }
 };
-
-
 
 const chackTokens = async (req, res, next) => {
   if (!req.headers.author) {
@@ -57,20 +62,27 @@ const chackTokens = async (req, res, next) => {
     if (err) {
       return res.status(401).send({ message: "unouthroize users" });
     }
-    console.log(decoded);
-    req.oner_email = decoded.email
+    req.oner_email = decoded.email;
     next();
   });
 };
 
+const axiosVerifyUser = async (req, res, next) => {
+  const authorizationwd = req.headers.authorization;
+  if (!authorizationwd) {
+    return res.status(401).send({ message: "Unother Accesss" });
+  }
+  const tokens = authorizationwd.split(" ")[1];
 
-// const userEmailverify = async (req, res, next) => {
-//   if (req.oner_email !== req.oner_email) {
-//     return res.status(403).send({ message: "firebase access denides" });
-//   }
-//   next()
-// };
-
+  try {
+    const verify = await admin.auth().verifyIdToken(tokens);
+    req.verify_email = verify.email;
+    console.log(verify);
+    next();
+  } catch {
+    return res.status(401).send({ message: "Unother Accesss" });
+  }
+};
 
 const uri = `mongodb+srv://${process.env.DB_USERNAME}:${process.env.DB_PASSWORD}@clustermyfirstmongodbpr.2cecfoe.mongodb.net/?appName=ClusterMyFirstMongoDbProject`;
 
@@ -155,7 +167,7 @@ async function run() {
     app.get("/producat", async (req, res) => {
       //   const projectFild = { title: 1, price_min: 1, price_max: 1, image: 1 };
       //   const data = myCollection.find().sort({ price_min: -1 }).skip(2).limit(6).project(projectFild);
-     const query = {};
+      const query = {};
       if (req.query.email) {
         query.email = req.query.email;
       }
@@ -179,8 +191,10 @@ async function run() {
       res.send(result);
     });
 
-    // post
-    app.post("/producat", async (req, res) => {
+    // post producat
+    app.post("/producat", axiosVerifyUser, async (req, res) => {
+      console.log("this is axios request", req.verify_email);
+
       const data = req.body;
       const result = await myCollection.insertOne(data);
       res.send(result);
@@ -226,21 +240,18 @@ async function run() {
     //   res.send(result);
     // });
 
-    app.get("/bids", chackTokens, async (req, res) => {
+    app.get("/bids", verifyFirebaseToken, async (req, res) => {
       const query = {};
       if (req.query.email) {
-          
         query.byer_email = req.query.email;
       }
-
-      if(req.query.email !== req.oner_email){
-        return res.status(403).send({message: "unoutrize access user"})
+      if (req.query.email !== req.oner_email) {
+        return res.status(403).send({ message: "Not  access real user" });
       }
       const coursor = myBids.find(query);
       const result = await coursor.toArray();
       res.send(result);
     });
-
 
     app.post("/bids", async (req, res) => {
       const data = req.body;
