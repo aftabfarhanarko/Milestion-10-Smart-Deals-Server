@@ -9,7 +9,9 @@ require("dotenv").config();
 const cookieParser = require("cookie-parser");
 
 // firebase admine SDk
-const serviceAccount = require("./firebase-admin-sdk.json");
+const decoded = Buffer.from(process.env.FIRE_BASE_SERVICE_KEY, "base64").toString("utf8");
+const serviceAccount = JSON.parse(decoded);
+
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
 });
