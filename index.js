@@ -29,6 +29,7 @@ const logger = (req, res, next) => {
   next();
 };
 
+// bides one Apis
 const verifyFirebaseToken = async (req, res, next) => {
   const authHeader = req.headers.authorization;
   if (!authHeader) {
@@ -50,6 +51,7 @@ const verifyFirebaseToken = async (req, res, next) => {
   }
 };
 
+// jwt tokens verify
 const chackTokens = async (req, res, next) => {
   if (!req.headers.author) {
     return res.status(401).send({ message: "unother access" });
@@ -67,6 +69,7 @@ const chackTokens = async (req, res, next) => {
   });
 };
 
+// axios apis midelwear
 const axiosVerifyUser = async (req, res, next) => {
   const authorizationwd = req.headers.authorization;
   if (!authorizationwd) {
@@ -183,10 +186,10 @@ async function run() {
       res.send(result);
     });
 
-    app.get("/producat/bids/:id", verifyFirebaseToken, async (req, res) => {
+    app.get("/producat/bids/:id", async (req, res) => {
       const producatId = req.params.id;
       const coursor = { producatIDS: producatId };
-      const query = myBids.find(coursor).sort({ bid_price: -1 });
+      const query = myBids.find(coursor).sort({ bid_price: 1 });
       const result = await query.toArray();
       res.send(result);
     });
@@ -257,6 +260,7 @@ async function run() {
       const data = req.body;
       const result = await myBids.insertOne(data);
       res.send(result);
+      console.log(result);
     });
 
     app.patch("/bids/:id", async (req, res) => {
@@ -278,10 +282,10 @@ async function run() {
       res.send(result);
     });
 
-    await client.db("admin").command({ ping: 1 });
-    console.log(
-      "Pinged your deployment. You successfully connected to MongoDB!"
-    );
+    // await client.db("admin").command({ ping: 1 });
+    // console.log(
+    //   "Pinged your deployment. You successfully connected to MongoDB!"
+    // );
   } finally {
   }
 }
